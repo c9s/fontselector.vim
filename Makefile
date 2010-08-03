@@ -1,6 +1,5 @@
 # vim:filetype=make:foldmethod=marker:fdl=0:
 #
-#
 # 	Look at the stars, Look how they shine for you, And everything you do,
 # 	Yeah they were all yellow, 
 #
@@ -52,6 +51,7 @@
 # }
 # }}}
 
+SHELL=/bin/bash
 # INTERNAL VARIABLES {{{
 
 RECORD_FILE=.record
@@ -324,5 +324,8 @@ update:
 
 version:
 	@echo version - $(MAKEFILE_VERSION)
+
+# }}}
+- $(MAKEFILE_VERSION)
 
 # }}}
