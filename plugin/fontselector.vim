@@ -18,6 +18,11 @@ endf
 
 fun! s:renderList()
   let menu = [ ]
+  let file = expand('~/.vim/fontlist')
+
+  if filereadable( expand(file) )
+    cal extend( menu , readfile( expand(file) ) )
+  endif
 
   cal add( menu,"AR PL UKai TW 10" )
   cal add( menu,"AR PL UKai TW 12" )
