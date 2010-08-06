@@ -5,17 +5,59 @@
 
 fun! g:SetFont()
   let name = getline('.')
+
+  if name == "Quit"
+	wincmd q
+	return
+  endif
+
   exec 'set gfn=' . escape( name , " " )
   redraw
   echo "Current Font: " . name
 endf
 
-
 fun! s:renderList()
-    cal setline(1,"Droid Sans")
-    cal setline(2,"Droid Sans Mono")
-    cal setline(3,"Monospace")
-    cal setline(4,"Courier New")
+  let menu = [ ]
+
+  cal add( menu,"AR PL UKai TW 10" )
+  cal add( menu,"AR PL UKai TW 12" )
+  cal add( menu,"AR PL UKai TW 14" )
+  cal add( menu,"AR PL UKai TW 16" )
+
+  cal add( menu,"Bitstream Charter")
+
+  cal add( menu,"Serif")
+  cal add( menu,"Sans Serif")
+
+  cal add( menu,"Droid Sans")
+  cal add( menu,"Droid Sans Mono 10")
+  cal add( menu,"Droid Sans Mono 12")
+  cal add( menu,"Droid Sans Mono 14")
+  cal add( menu,"Droid Sans Serif 10")
+  cal add( menu,"Droid Sans Serif 12")
+  cal add( menu,"Droid Sans Serif 14")
+
+  cal add( menu,"Monospace 10")
+  cal add( menu,"Monospace 12")
+  cal add( menu,"Monospace 14")
+
+  cal add( menu,"Bitstream Sans Mono 12")
+  cal add( menu,"Bitstream Sans Mono 14")
+  cal add( menu,"Bitstream Sans Mono 16")
+
+  cal add( menu,"ProggyCleanTT CE 10")
+  cal add( menu,"ProggyCleanTT CE 12")
+  cal add( menu,"Courier 10 Pitch")
+  cal add( menu,"Courier 10 Pitch 10")
+  cal add( menu,"Courier 10 Pitch 12")
+  cal add( menu,"Quit")
+
+  " cal add( menu,"Courier New")
+  let idx = 1
+  for font in menu 
+	cal setline( idx , font )
+	let idx += 1
+  endfor
 endf
 
 fun! s:SelectFonts()
@@ -46,4 +88,5 @@ fun! s:help()
   echo "  ?    - show help"
 endf
 
+com! FontSelect     :cal s:SelectFonts()
 com! SelectFonts    :cal s:SelectFonts()
