@@ -1,5 +1,6 @@
 # vim:filetype=make:foldmethod=marker:fdl=0:
 #
+#
 # 	Look at the stars, Look how they shine for you, And everything you do,
 # 	Yeah they were all yellow, 
 #
@@ -51,7 +52,6 @@
 # }
 # }}}
 
-SHELL=/bin/bash
 # INTERNAL VARIABLES {{{
 
 RECORD_FILE=.record
@@ -60,7 +60,9 @@ README_FILES=`ls -1 | grep -i readme`
 WGET_OPT=-c -nv
 CURL_OPT=
 RECORD_SCRIPT=.mkrecord
-TAR=tar czvHf
+TAR=tar czvf
+
+GIT_SOURCES=
 
 # INTERNAL FUNCTIONS {{{
 record_file = \
@@ -70,6 +72,35 @@ record_file = \
 # }}}
 
 # PUBLIC FUNCTIONS {{{
+
+GIT_SOURCES=
+DEPEND_DIR=/tmp/vim-deps
+
+# Usage:
+#
+# 		$(call install_git_sources)
+#
+
+install_git_source = \
+		PWD=$(PWD) ; \
+		mkdir -p $(DEPEND_DIR) ; \
+		cd $(DEPEND_DIR) ; \
+		for git_uri in $(GIT_SOURCES) ; do \
+			OUTDIR=$$(echo $$git_uri | perl -pe 's{^.*/}{}') ;\
+			echo $$OUTDIR ; \
+			if [[ -e $$OUTDIR ]] ; then \
+				cd $$OUTDIR ; \
+				git pull origin master && \
+				make install && cd .. ; \
+			else \
+				git clone $$git_uri $$OUTDIR && \
+				cd $$OUTDIR && \
+				make install && cd .. ; \
+			fi; \
+		done ;
+
+
+
 
 # install file by inspecting content
 install_file = \
@@ -96,6 +127,13 @@ fetch_url = \
 			wget $(WGET_OPT) $(1) -O $(2)  				    \
 		; fi  									\
 		; echo $(2) >> .bundlefiles
+
+
+install_source = \
+		for git_uri in $(GIT_SOURCES) ; do \
+			OUTDIR=$$(echo $$git_uri | perl -pe 's{^.*/}{}') ;\
+			echo $$OUTDIR ; \
+		done
 
 # fetch script from github
 fetch_github = \
@@ -162,6 +200,7 @@ MKFILES=Makefile `ls -1 | grep '.mk$$'`
 # 	  $(call fetch_url,[file url],[target path])
 # 	  $(call fetch_local,[from],[to])
 
+SHELL=bash
 
 CONFIG_FILE=config.mk
 -include ~/.vimauthor.mk
@@ -172,13 +211,19 @@ CONFIG_FILE=config.mk
 # ======= SECTIONS ======= {{{
 -include ext.mk
 
-all: install
+all: install-deps install
 
+install-deps:
+	# check required binaries
+	[[ -n $$(which git) ]]
+	[[ -n $$(which bash) ]]
+	[[ -n $$(which vim) ]]
+	[[ -n $$(which wget) || -n $$(which curl) ]]
+	$(call install_git_sources)
 
 check-require:
 	@if [[ -n `which wget` || -n `which curl` || -n `which fetch` ]]; then echo "wget|curl|fetch: OK" ; else echo "wget|curl|fetch: NOT OK" ; fi
 	@if [[ -n `which vim` ]] ; then echo "vim: OK" ; else echo "vim: NOT OK" ; fi
-
 
 config:
 	@rm -f $(CONFIG_FILE)
@@ -214,6 +259,7 @@ release:
 	fi
 
 pure-install:
+	@echo "Using Shell:" $(SHELL) 
 	@echo "Installing"
 	@if [[ -n "$(DIRS)" ]] ; then find $(DIRS) -type f | while read file ; do \
 			cp -v $$file $(VIMRUNTIME)/$$file ; done ; fi
@@ -254,13 +300,13 @@ mkfilelist:
 vimball-edit:
 	find $(DIRS) -type f > .tmp_list
 	vim .tmp_list
-	vim .tmp_list -c ":MkVimball $(NAME)-$(VERSION)" -c "q"
+	vim .tmp_list -c ":MkVimball $(NAME)-$(VERSION) ." -c "q"
 	@rm -vf .tmp_list
 	@echo "$(NAME)-$(VERSION).vba is ready."
 
 vimball:
 	find $(DIRS) -type f > .tmp_list
-	vim .tmp_list -c ":MkVimball $(NAME)-$(VERSION)" -c "q"
+	vim .tmp_list -c ":MkVimball $(NAME)-$(VERSION) ." -c "q"
 	@rm -vf .tmp_list
 	@echo "$(NAME)-$(VERSION).vba is ready."
 
@@ -287,12 +333,14 @@ mkrecordscript:
 		@echo "let content = join(split(output,\"\\\\n\"),'')"  >> $(RECORD_SCRIPT)
 		@echo "let record_file = expand('~/.vim/record/' . package_name )"  >> $(RECORD_SCRIPT)
 		@echo "cal writefile( [content] , record_file )"  >> $(RECORD_SCRIPT)
+		@echo "cal delete('.record')"  >> $(RECORD_SCRIPT)
 		@echo "echo \"Done\""  >> $(RECORD_SCRIPT)
 
 
 record: mkfilelist mkrecordscript
 	vim --noplugin -V10install.log -c "so $(RECORD_SCRIPT)" -c "q"
 	@echo "Vim script record making log: install.log"
+#	@rm -vf $(RECORD_FILE)
 
 rmrecord:
 	@echo "Removing Record"
@@ -324,8 +372,5 @@ update:
 
 version:
 	@echo version - $(MAKEFILE_VERSION)
-
-# }}}
-- $(MAKEFILE_VERSION)
 
 # }}}
